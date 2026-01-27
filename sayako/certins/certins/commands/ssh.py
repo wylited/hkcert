@@ -53,29 +53,37 @@ def run_ssh(tag, config_data):
         )
         
         cmd = ["powershell", "-NoProfile", "-Command", ps_command]
-    else:
-        # Linux/MacOS implementation attempt using `script`
-        # script syntax varies widely, this is a best-effort for Linux
-        # script -c "command" logfile
         
-        # Escape for Shell (sh)
-        # 1. Escape Backslashes
-        remote_cmd_sh = base_remote_cmd.replace("\\", "\\\\")
-        # 2. Escape Dollars for sh double-quote context (needs \\$)
-        remote_cmd_sh = remote_cmd_sh.replace("$", "\\\\$")
-        
-        ssh_cmd_str = f"ssh -t -i '{pem_path}' {host} \"{remote_cmd_sh}\""
-        
-        cmd = ["script", "-q", "-c", ssh_cmd_str, log_path]
+        try:
+            subprocess.call(cmd)
+        except KeyboardInterrupt:
+            print("\nDisconnected.")
+        except Exception as e:
+            print(f"Error executing SSH: {e}")
+            subprocess.call(["ssh", "-i", pem_path, host])
 
-    try:
-        subprocess.call(cmd)
-    except KeyboardInterrupt:
-        print("\nDisconnected.")
-    except Exception as e:
-        print(f"Error executing SSH: {e}")
-        # Fallback to direct SSH if wrapping fails
-        print("Falling back to direct SSH (no logging)...")
-        subprocess.call(["ssh", "-i", pem_path, host])
+    else:
+        # Linux/MacOS: Use Python's pty module to create a pseudo-terminal
+        import pty
+        
+        ssh_cmd = ["ssh", "-t", "-i", pem_path, host, base_remote_cmd]
+        
+        try:
+            with open(log_path, 'wb') as f_log:
+                def read_master_d(fd):
+                    data = os.read(fd, 1024)
+                    f_log.write(data)
+                    f_log.flush()
+                    return data
+                
+                pty.spawn(ssh_cmd, read_master_d)
+                
+        except KeyboardInterrupt:
+            print("\nDisconnected.")
+        except Exception as e:
+            print(f"Error executing SSH via pty: {e}")
+            print(f"SSHing without logging...")
+            subprocess.call(ssh_cmd)
+
     print("Session ended.")
     print(f"Log saved to: {log_path}")
