@@ -42,7 +42,7 @@ def main():
 
     if args.command in ['su', 'setup'] or ("xls" in args and args.xls):
         if args.xls:
-            tag = args.tag if "tag" in args else os.path.splitext(os.path.basename(args.xls))[0].split()[0]
+            tag = args.tag if ("tag" in args and args.tag) else os.path.splitext(os.path.basename(args.xls))[0].split()[0]
             setup_from_xls(tag, args.xls, config)
         elif args.new:
             setup_new_tag(config)

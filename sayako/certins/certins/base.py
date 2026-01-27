@@ -163,6 +163,3 @@ def setup_new_tag(config, tag=None):
     save_config(config)
     print(f"Configuration for '{tag}' saved.")
     return config[tag]
-
-if __name__ == "__main__":
-    main()
