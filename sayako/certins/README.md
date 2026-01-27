@@ -10,6 +10,15 @@ pip install -e .
 
 ## Usage
 
+### TL;DR
+```bash
+certins s -x path/to/chall.xls # s for ssh, providing xls will trigger init.
+certins s chall
+certins f chall up local/file/path remote/file/path # f for file
+certins f chall down remote/file/path [local/dir/or/file/path]
+certins t # t for tags. view all saved instance tags
+```
+
 The `certins` CLI tool provides four main commands: `setup`, `ssh`, `files`, and `tags`.
 
 ### 1. Setup Configuration
