@@ -1,0 +1,16 @@
+# pyproject.toml
+
+[project]
+name = "certins"
+version = "0.1.0"
+description = "hkcert instance automation tools"
+requires-python = ">=3.8"
+dependencies = [
+  "pandas",
+  "xlrd",
+  "openpyxl",
+  "requests"
+]
+
+[project.scripts]
+certins = "certins.main:main" 
