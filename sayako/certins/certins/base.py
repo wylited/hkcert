@@ -115,9 +115,18 @@ def setup_from_xls(tag, xls_path, config):
         traceback.print_exc()
         sys.exit(1)
 
-def setup_new_tag(tag, config):
-    print(f"Tag '{tag}' not found. Let's configure it.")
-    
+def setup_new_tag(config, tag=None):
+    if tag:
+        print(f"Tag '{tag}' not found. Let's configure it.")
+    else:
+        tag = input("Enter a new configuration tag name: ").strip()
+        while not tag or tag in config:
+            if not tag:
+                print("Tag name cannot be empty.")
+            else:
+                print(f"Tag '{tag}' already exists. Please choose a different name.")
+            tag = input("Enter a new configuration tag name: ").strip()
+            
     host = input(f"Enter Host (e.g., user@1.2.3.4): ").strip()
     if not host:
         print("Host cannot be empty.")

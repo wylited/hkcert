@@ -1,18 +1,12 @@
 from certins.base import (
-    CONFIG_FILE,
     SECRETS_DIR,
     LOGS_DIR,
-    ensure_dirs,
-    load_config,
-    save_config,
-    secure_pem_permissions,
-    setup_from_xls,
-    setup_new_tag,
 )
 import os
 import datetime
 import platform
 import subprocess
+import sys
 
 def run_ssh(tag, config_data):
     host = config_data['host']
@@ -83,3 +77,5 @@ def run_ssh(tag, config_data):
         # Fallback to direct SSH if wrapping fails
         print("Falling back to direct SSH (no logging)...")
         subprocess.call(["ssh", "-i", pem_path, host])
+    print("Session ended.")
+    print(f"Log saved to: {log_path}")
