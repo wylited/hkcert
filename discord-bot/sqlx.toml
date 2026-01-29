@@ -1,0 +1,7 @@
+[database]
+# Path to the SQLite database file
+create-migrations = true
+
+[migrations]
+# Directory where migration files are stored
+path = "migrations"
