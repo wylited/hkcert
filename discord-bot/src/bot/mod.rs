@@ -1,6 +1,4 @@
-use crate::config::AppConfig;
 use crate::models::AppState;
-use crate::utils::format::*;
 use anyhow::Result;
 use poise::serenity_prelude as serenity;
 use std::sync::Arc;
@@ -17,7 +15,8 @@ type Context<'a> = poise::Context<'a, Arc<AppState>, Error>;
 
 /// Start the Discord bot
 pub async fn start_bot(state: Arc<AppState>) -> Result<()> {
-    let config = state.config.clone();
+    let token = state.config.discord_token.clone();
+    let guild_id = state.config.guild_id;
     
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
@@ -59,8 +58,8 @@ pub async fn start_bot(state: Arc<AppState>) -> Result<()> {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 
                 // Register guild-specific commands if guild ID is provided
-                if let Some(guild_id) = config.guild_id {
-                    let guild_id = serenity::GuildId::new(guild_id);
+                if let Some(gid) = guild_id {
+                    let guild_id = serenity::GuildId::new(gid);
                     poise::builtins::register_in_guild(ctx, &framework.options().commands, guild_id).await?;
                     info!("✅ Slash commands registered for guild {}", guild_id);
                 }
@@ -74,19 +73,12 @@ pub async fn start_bot(state: Arc<AppState>) -> Result<()> {
         | serenity::GatewayIntents::GUILD_MESSAGES
         | serenity::GatewayIntents::GUILDS;
 
-    let mut client = serenity::Client::builder(&config.discord_token, intents)
+    let mut client = serenity::Client::builder(&token, intents)
         .framework(framework)
         .await?;
 
     client.start().await?;
     Ok(())
-}
-
-/// Check if user is admin
-fn is_admin(ctx: Context<'_>) -> bool {
-    let state = ctx.data();
-    let user_id = ctx.author().id.get();
-    state.config.admin_user_ids.contains(&user_id) || ctx.author().id.get() == 123456789 // Replace with owner check
 }
 
 /// Help command
@@ -111,13 +103,13 @@ async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     
     let ping = ctx.ping().await.as_millis();
     
+    let content = format!(
+        "🏓 Pong! Latency: `{}ms`\n🤖 Bot is operational!",
+        ping
+    );
+    
     response
-        .edit(ctx, |m| {
-            m.content(format!(
-                "🏓 Pong! Latency: `{}ms`\n🤖 Bot is operational!",
-                ping
-            ))
-        })
+        .edit(ctx, poise::CreateReply::default().content(content))
         .await?;
     
     Ok(())

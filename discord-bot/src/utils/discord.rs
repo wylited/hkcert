@@ -1,7 +1,7 @@
 use crate::models::log_entry::LogEntry;
-use serenity::builder::{CreateEmbed, CreateEmbedFooter, CreateMessage};
+use serenity::builder::{CreateEmbed, CreateEmbedFooter, CreateChannel};
+use serenity::http::Http;
 use serenity::model::prelude::*;
-use serenity::prelude::*;
 
 /// Create a Discord embed from a log entry
 pub fn create_log_embed(entry: &LogEntry) -> CreateEmbed {
@@ -72,51 +72,29 @@ pub fn create_log_embed(entry: &LogEntry) -> CreateEmbed {
     embed
 }
 
-/// Create a message builder from a log entry
-pub fn create_log_message(entry: &LogEntry) -> CreateMessage {
-    let mut message = CreateMessage::default();
-
-    // Add pings if needed
-    let mut content = String::new();
-    if entry.ping_everyone {
-        content.push_str("@everyone ");
-    }
-    if entry.ping_here {
-        content.push_str("@here ");
-    }
-
-    if !content.is_empty() {
-        message = message.content(content);
-    }
-
-    message = message.add_embed(create_log_embed(entry));
-
-    message
-}
-
 /// Find or create a channel by name under a category
 pub async fn find_or_create_channel(
-    ctx: &Context,
+    http: &Http,
     guild_id: GuildId,
     category_id: ChannelId,
     channel_name: &str,
 ) -> Result<ChannelId, Box<dyn std::error::Error + Send + Sync>> {
     // First try to find existing channel
-    let guild = guild_id.to_partial_guild(ctx).await?;
+    let channels = guild_id.channels(http).await?;
     
-    for (id, channel) in guild.channels(ctx).await? {
+    for (id, channel) in channels {
         if channel.name().to_lowercase() == channel_name.to_lowercase() {
             return Ok(id);
         }
     }
 
     // Create new channel
+    let create_channel = CreateChannel::new(channel_name)
+        .kind(ChannelType::Text)
+        .category(category_id);
+    
     let channel = guild_id
-        .create_channel(ctx, |c| {
-            c.name(channel_name)
-                .kind(ChannelType::Text)
-                .category(category_id)
-        })
+        .create_channel(http, create_channel)
         .await?;
 
     Ok(channel.id)
@@ -124,32 +102,26 @@ pub async fn find_or_create_channel(
 
 /// Find or create a category by name
 pub async fn find_or_create_category(
-    ctx: &Context,
+    http: &Http,
     guild_id: GuildId,
     category_name: &str,
 ) -> Result<ChannelId, Box<dyn std::error::Error + Send + Sync>> {
     // First try to find existing category
-    let guild = guild_id.to_partial_guild(ctx).await?;
+    let channels = guild_id.channels(http).await?;
     
-    for (id, channel) in guild.channels(ctx).await? {
+    for (id, channel) in channels {
         if channel.kind == ChannelType::Category && channel.name() == category_name {
             return Ok(id);
         }
     }
 
     // Create new category
+    let create_channel = CreateChannel::new(category_name)
+        .kind(ChannelType::Category);
+    
     let channel = guild_id
-        .create_channel(ctx, |c| c.name(category_name).kind(ChannelType::Category))
+        .create_channel(http, create_channel)
         .await?;
 
     Ok(channel.id)
-}
-
-/// Get guild ID from context
-pub async fn get_guild_id(ctx: &Context) -> Option<GuildId> {
-    // Try to get from cache first
-    for (guild_id, guild) in ctx.cache.guilds() {
-        return Some(guild_id);
-    }
-    None
 }

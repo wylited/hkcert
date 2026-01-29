@@ -2,7 +2,7 @@
 # Example curl commands for AWD Logger
 
 HOST="${DISCLOG_HOST:-localhost}"
-PORT="${DISCLOG_PORT:-8080}"
+PORT="${DISCLOG_PORT:-4545}"
 BASE_URL="http://${HOST}:${PORT}"
 
 echo "Sending logs to ${BASE_URL}..."

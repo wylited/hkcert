@@ -67,7 +67,7 @@ impl Default for LogLevel {
 }
 
 /// A log entry sent via HTTP API
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct LogEntry {
     /// Log message content
     pub message: String,

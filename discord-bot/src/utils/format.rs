@@ -1,8 +1,7 @@
-use chrono::DateTime;
-use std::time::{SystemTime, UNIX_EPOCH};
+use chrono::{DateTime, Utc};
 
 /// Format a timestamp in a human-readable way
-pub fn format_timestamp<T: chrono::TimeZone>(dt: &DateTime<T>) -> String {
+pub fn format_timestamp(dt: &DateTime<Utc>) -> String {
     dt.format("%Y-%m-%d %H:%M:%S UTC").to_string()
 }
 

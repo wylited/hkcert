@@ -1,4 +1,4 @@
-use crate::bot::{is_admin, Context, Error};
+use crate::bot::{Context, Error};
 use crate::utils::discord::*;
 use crate::utils::format::*;
 use serenity::builder::CreateEmbed;
@@ -9,8 +9,7 @@ use serenity::model::prelude::*;
     slash_command,
     prefix_command,
     subcommands("whitelist_add", "whitelist_remove", "whitelist_list", "whitelist_clear"),
-    subcommand_required,
-    check = "is_admin"
+    subcommand_required
 )]
 pub async fn whitelist(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -57,7 +56,8 @@ pub async fn whitelist_add(
                 embed = embed.field("Description", desc, true);
             }
 
-            ctx.send(|m| m.embed(embed).ephemeral(true)).await?;
+            let builder = poise::CreateReply::default().embed(embed).ephemeral(true);
+            ctx.send(builder).await?;
         }
         Err(e) => {
             ctx.say(format!("❌ Failed to add IP: {}", e)).await?;
@@ -136,7 +136,8 @@ pub async fn whitelist_list(ctx: Context<'_>) -> Result<(), Error> {
                     .description(description)
                     .color(0x3498DB);
 
-                ctx.send(|m| m.embed(embed).ephemeral(true)).await?;
+                let builder = poise::CreateReply::default().embed(embed).ephemeral(true);
+                ctx.send(builder).await?;
             }
         }
         Err(e) => {
@@ -212,7 +213,8 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
         Err(_) => {}
     }
 
-    ctx.send(|m| m.embed(embed)).await?;
+    let builder = poise::CreateReply::default().embed(embed);
+    ctx.send(builder).await?;
 
     Ok(())
 }
@@ -222,8 +224,7 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
     slash_command,
     prefix_command,
     subcommands("channel_list", "channel_create", "channel_delete"),
-    subcommand_required,
-    check = "is_admin"
+    subcommand_required
 )]
 pub async fn channel(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
@@ -235,19 +236,16 @@ pub async fn channel_list(ctx: Context<'_>) -> Result<(), Error> {
     ctx.defer().await?;
 
     let guild_id = ctx.guild_id().ok_or("This command must be used in a guild")?;
-    let channels = ctx.guild().unwrap().channels;
-
-    let log_category = ctx
-        .data()
-        .config
-        .log_category_name
-        .clone();
+    
+    // Get channels from HTTP API instead of cache to avoid Send issues
+    let channels = guild_id.channels(ctx.http()).await?;
+    let log_category = ctx.data().config.log_category_name.clone();
 
     let mut log_channels = Vec::new();
     for (id, channel) in &channels {
         if let Some(parent_id) = channel.parent_id {
             if let Ok(parent) = parent_id.to_channel(ctx).await {
-                if let Some(category) = parent.category() {
+                if let Some(category) = parent.guild() {
                     if category.name == log_category {
                         log_channels.push((channel.name.clone(), *id));
                     }
@@ -272,7 +270,8 @@ pub async fn channel_list(ctx: Context<'_>) -> Result<(), Error> {
         embed = embed.description(description);
     }
 
-    ctx.send(|m| m.embed(embed)).await?;
+    let builder = poise::CreateReply::default().embed(embed);
+    ctx.send(builder).await?;
 
     Ok(())
 }
@@ -286,14 +285,15 @@ pub async fn channel_create(
     ctx.defer().await?;
 
     let guild_id = ctx.guild_id().ok_or("This command must be used in a guild")?;
+    let http = ctx.http();
     
     // Find or create the log category
-    let category_id = find_or_create_category(ctx.serenity_context(), guild_id, &ctx.data().config.log_category_name)
+    let category_id = find_or_create_category(http, guild_id, &ctx.data().config.log_category_name)
         .await?;
 
     // Create the channel
     let channel_id = find_or_create_channel(
-        ctx.serenity_context(),
+        http,
         guild_id,
         category_id,
         &name.to_lowercase().replace(" ", "-"),
@@ -313,17 +313,16 @@ pub async fn channel_create(
 #[poise::command(slash_command, prefix_command)]
 pub async fn channel_delete(
     ctx: Context<'_>,
-    #[description = "Channel to delete"] channel: Channel,
+    #[description = "Channel to delete"] channel: GuildChannel,
 ) -> Result<(), Error> {
     ctx.defer().await?;
 
-    let channel_id = channel.id();
-    let channel_name = channel.to_string();
+    let channel_name = channel.name.clone();
 
     // Delete the channel
-    channel_id.delete(ctx).await?;
+    channel.delete(ctx).await?;
 
-    ctx.say(format!("🗑️ Deleted channel {}", channel_name)).await?;
+    ctx.say(format!("🗑️ Deleted channel `{}`", channel_name)).await?;
 
     Ok(())
 }

@@ -7,6 +7,7 @@ pub mod log_entry;
 pub mod whitelist;
 
 /// Shared application state
+#[derive(Debug)]
 pub struct AppState {
     pub config: Arc<AppConfig>,
     pub db: Arc<RwLock<Database>>,
