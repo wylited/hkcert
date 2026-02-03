@@ -1,0 +1,12 @@
+[submodule "lasp/externals/patcherex"]
+	path = lasp/externals/patcherex
+	url = https://github.com/angr/patcherex.git
+[submodule "lasp/externals/povsim"]
+	path = lasp/externals/povsim
+	url = https://github.com/mechaphish/povsim.git
+[submodule "lasp/externals/compilerex"]
+	path = lasp/externals/compilerex
+	url = https://github.com/mechaphish/compilerex
+[submodule "lasp/externals/tracer"]
+	path = lasp/externals/tracer
+	url = https://github.com/angr/tracer
