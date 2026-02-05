@@ -55,12 +55,12 @@ def main():
         if args.xls:
             tag = args.tag if ("tag" in args and args.tag) else os.path.splitext(os.path.basename(args.xls))[0].split()[0]
             setup_from_xls(tag, args.xls, config)
+            # Save updated config
+            save_config(config)
+            print(f"Configuration for {tag} saved.")
+        args.tag = tag  # Set tag for potential next step
         elif args.new:
             setup_new_tag(config)
-        # Save updated config
-        save_config(config)
-        print(f"Configuration for {tag} saved.")
-        args.tag = tag  # Set tag for potential next step
         
     if args.command in ['s', 'ssh']:
         tag = args.tag
