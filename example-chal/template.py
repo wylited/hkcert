@@ -112,10 +112,9 @@ def run_single(ip):
 
 def run_all():
     """Run exploit against all targets."""
-    target_list = targets()
-    my_ip = our_ip()
+    target_list = targets()  # Already excludes our IP
     
-    print(f"[*] Our IP: {my_ip}")
+    print(f"[*] Our IP: {our_ip()}")
     print(f"[*] Targets: {len(target_list)}")
     print(f"[*] Port: {PORT}")
     print()
@@ -126,10 +125,6 @@ def run_all():
     failed = 0
     
     for ip in target_list:
-        # Skip our own IP
-        if ip == my_ip:
-            continue
-            
         if run_single(ip):
             success += 1
         else:
