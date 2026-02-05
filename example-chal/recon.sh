@@ -55,6 +55,50 @@ for pid in $(ss -tlnp 2>/dev/null | grep -oP 'pid=\K\d+' | sort -u); do
 done 2>/dev/null | head -15
 
 # ============================================
+header "XINETD / SOCAT SERVICES"
+# ============================================
+info "Xinetd config:"
+if [ -d /etc/xinetd.d ]; then
+    for f in /etc/xinetd.d/*; do
+        [ -f "$f" ] && echo -e "\n${YELLOW}=== $f ===${NC}" && cat "$f"
+    done
+else
+    info "No xinetd.d directory"
+fi
+
+info "Xinetd main config:"
+[ -f /etc/xinetd.conf ] && cat /etc/xinetd.conf 2>/dev/null || true
+
+info "Inetd config:"
+[ -f /etc/inetd.conf ] && cat /etc/inetd.conf 2>/dev/null || true
+
+info "Socat/ncat services:"
+ps aux 2>/dev/null | grep -E "(socat|ncat|nc)" | grep -v grep || true
+
+info "Systemd socket services:"
+systemctl list-units --type=socket 2>/dev/null | grep -v "^$" | head -15 || true
+
+# ============================================
+header "CHALLENGE BINARIES"
+# ============================================
+info "Setuid binaries (potential targets):"
+find / -perm -4000 -type f 2>/dev/null | grep -v -E "(proc|sys|snap)" | head -15 || true
+
+info "Binaries in common challenge locations:"
+find /home /opt /var/www /app /srv /challenge -type f -executable 2>/dev/null | file -f - 2>/dev/null | grep -i "elf" | head -15 || true
+
+info "Challenge binary details (if found):"
+for bin in /home/*/chal* /opt/*/chal* /challenge/* /pwn*; do
+    if [ -f "$bin" ] && file "$bin" 2>/dev/null | grep -qi "elf"; then
+        good "Binary: $bin"
+        file "$bin" 2>/dev/null
+        checksec --file="$bin" 2>/dev/null || true
+        ls -la "$bin" 2>/dev/null
+        echo ""
+    fi
+done 2>/dev/null || true
+
+# ============================================
 header "WEB SERVICES"
 # ============================================
 info "Web server configs:"
