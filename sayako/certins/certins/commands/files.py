@@ -23,7 +23,7 @@ def run_files(tag, config_data, direction, src, dest):
 
     print(f"\nTransferring files with {host}...")
     
-    scp_args = ["scp", "-i", pem_path]
+    scp_args = ["scp", "-rC", "-i", pem_path]
     
     if direction == 'up':
         local_path = src
