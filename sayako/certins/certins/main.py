@@ -26,7 +26,7 @@ def main():
     files_parser.add_argument('tag', type=str, help='Configuration tag')
     files_parser.add_argument('direction', choices=['up', 'down'], help='up (upload local->remote) or down (download remote->local)')
     files_parser.add_argument('src', type=str, help='Source path (Local for up, Remote for down)')
-    files_parser.add_argument('dest', type=str, help='Destination path (Remote for up, Local for down)')
+    files_parser.add_argument('dest', type=str, nargs="?", help='Destination path (Remote for up, Local for down)')
 
     # Setup Subcommand
     setup_parser = subparsers.add_parser('setup', aliases=['su'], help='Setup a new SSH connection configuration')

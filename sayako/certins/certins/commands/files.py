@@ -1,5 +1,6 @@
 from certins.base import (
     SECRETS_DIR,
+    BASE_DIR
 )
 import os
 import sys
@@ -36,6 +37,13 @@ def run_files(tag, config_data, direction, src, dest):
     else:  # direction == 'down'
         remote_path = src
         local_path = dest
+        
+        if not dest:
+            if not os.path.exists(os.path.join(BASE_DIR, "..", "downloads")):
+                os.makedirs(os.path.join(BASE_DIR, "..", "downloads"))
+            if not os.path.exists(os.path.join(BASE_DIR, "..", "downloads", tag)):
+                os.makedirs(os.path.join(BASE_DIR, "..", "downloads", tag))
+            local_path = os.path.abspath(os.path.join(BASE_DIR, "..", "downloads", tag, os.path.basename(remote_path)))
         
         # If local_path is a directory, append remote filename
         if os.path.isdir(local_path):
