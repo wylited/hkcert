@@ -6,14 +6,14 @@ A simple, batteries-included framework for Attack-Defense CTF competitions.
 
 ```bash
 # 1. Copy template for your exploit
-cp template.py my_exploit.py
+cp -r example-chal chal-name
 
-# 2. Edit my_exploit.py:
+# 2. Edit pwn.py or web.py
 #    - Set PORT for the challenge
 #    - Implement exploit() function
 
 # 3. Run it
-python3 my_exploit.py
+python3 pwn.py
 ```
 
 ## Installation
