@@ -1,7 +1,7 @@
 # Connection Tools (hkCERT INStance automation)
 WIP WIP WIP WIP
 
-**Completely tested on Kali Linux. LMK if it doesn't work on Windows**
+**Completely tested on Kali Linux. LMK if it doesn't work on Windows/Some Distros u using**
 
 ## Installation
 ```
