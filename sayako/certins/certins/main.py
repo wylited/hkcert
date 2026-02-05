@@ -7,6 +7,7 @@ from certins.base import ensure_dirs, save_config, load_config, setup_from_xls, 
 from certins.commands.files import run_files
 from certins.commands.ssh import run_ssh
 from certins.commands.tags import run_tags
+from certins.commands.recon import run_recon, run_exec
 
 # two subcommands: ssh and files
 def main():
@@ -37,6 +38,16 @@ def main():
 
     # Tags Subcommand
     subparsers.add_parser('tags', aliases=['t'], help='List all configured tags')
+
+    # Recon Subcommand
+    recon_parser = subparsers.add_parser('recon', aliases=['r'], help='Run reconnaissance on remote server')
+    recon_parser.add_argument('tag', type=str, help='Configuration tag')
+    recon_parser.add_argument('-q', '--quick', action='store_true', help='Quick recon (ports, xinetd, processes, flags only)')
+
+    # Exec Subcommand
+    exec_parser = subparsers.add_parser('exec', aliases=['e'], help='Execute command on remote server')
+    exec_parser.add_argument('tag', type=str, help='Configuration tag')
+    exec_parser.add_argument('cmd', type=str, help='Command to execute')
 
     args = parser.parse_args()
 
@@ -73,3 +84,17 @@ def main():
 
     if args.command in ['t', 'tags']:
         run_tags(config)
+
+    if args.command in ['r', 'recon']:
+        tag = args.tag
+        if tag not in config:
+            print(f"Error: No configuration found for tag '{tag}'.")
+            sys.exit(1)
+        run_recon(tag, config[tag], quick=args.quick)
+
+    if args.command in ['e', 'exec']:
+        tag = args.tag
+        if tag not in config:
+            print(f"Error: No configuration found for tag '{tag}'.")
+            sys.exit(1)
+        run_exec(tag, config[tag], args.cmd)
