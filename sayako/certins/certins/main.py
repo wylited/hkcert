@@ -58,7 +58,7 @@ def main():
             # Save updated config
             save_config(config)
             print(f"Configuration for {tag} saved.")
-        args.tag = tag  # Set tag for potential next step
+            args.tag = tag  # Set tag for potential next step
         elif args.new:
             setup_new_tag(config)
         
