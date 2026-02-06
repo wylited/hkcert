@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - My Blog{% endblock %}
+
+{% block content %}
+<style>
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .admin-title {
+        font-size: 1.75rem;
+        color: #2c3e50;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #ecf0f1;
+    }
+
+    .tab {
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        color: #7f8c8d;
+        text-decoration: none;
+        transition: color 0.3s, border-bottom 0.3s;
+    }
+
+    .tab:hover {
+        color: #3498db;
+    }
+
+    .tab.active {
+        color: #3498db;
+        border-bottom: 2px solid #3498db;
+        margin-bottom: -2px;
+    }
+
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    .users-table th,
+    .users-table td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid #ecf0f1;
+    }
+
+    .users-table th {
+        background: #34495e;
+        color: white;
+        font-weight: 500;
+    }
+
+    .users-table tr:hover {
+        background: #f8f9fa;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .btn-sm {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    .no-users {
+        text-align: center;
+        padding: 3rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        color: #7f8c8d;
+    }
+
+    @media (max-width: 768px) {
+        .users-table th,
+        .users-table td {
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .users-table {
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+        }
+
+        .btn-sm {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="tabs">
+    <a href="{{ url_for('admin') }}" class="tab">Article Management</a>
+    <a href="{{ url_for('user_list') }}" class="tab active">User Management</a>
+</div>
+
+<div class="admin-header">
+    <h1 class="admin-title">User Management</h1>
+    <a href="{{ url_for('user_add') }}" class="btn btn-success">+ Add User</a>
+</div>
+
+{% if users %}
+    <table class="users-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Articles</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>
+                        {% if user.is_admin %}
+                            <span style="color: #e74c3c; font-weight: 600;">Admin</span>
+                        {% else %}
+                            <span style="color: #7f8c8d;">Regular User</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.posts|length }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{{ url_for('user_edit', user_id=user.id) }}" class="btn btn-primary btn-sm">Edit</a>
+                            <form method="POST" action="{{ url_for('user_delete', user_id=user.id) }}" onsubmit="return confirm('Are you sure you want to delete user {{ user.username }}?');">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <div class="no-users">
+        <h3>No users yet</h3>
+        <p>No users have been registered yet</p>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}{% if user %}Edit User - {{ user.username }}{% else %}Add User{% endif %} - My Blog{% endblock %}
+
+{% block content %}
+<style>
+    .editor-container {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .editor-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .editor-title {
+        font-size: 1.75rem;
+        color: #2c3e50;
+    }
+
+    .editor-form {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #555;
+        font-weight: 500;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .form-help {
+        color: #7f8c8d;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+    .avatar-section {
+        margin-bottom: 1.5rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+        text-align: center;
+    }
+
+    .avatar-preview {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin: 0 auto 1rem;
+        border: 3px solid #3498db;
+    }
+
+    .default-avatar-large {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: #3498db;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 2rem;
+        margin: 0 auto 1rem;
+        border: 3px solid #3498db;
+    }
+
+    .avatar-info {
+        color: #555;
+        margin-bottom: 1rem;
+    }
+
+    .avatar-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .avatar-actions input[type="text"] {
+        width: 180px;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .btn-submit {
+        flex: 1;
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .btn-cancel {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .editor-form {
+            padding: 1.5rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-cancel {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="editor-container">
+    <div class="editor-header">
+        <h1 class="editor-title">{% if user %}Edit User{% else %}Add User{% endif %}</h1>
+    </div>
+
+    <form method="POST" action="{% if user %}{{ url_for('user_edit', user_id=user.id) }}{% else %}{{ url_for('user_add') }}{% endif %}" class="editor-form">
+        <div class="form-group">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" id="username" name="username" class="form-input" value="{% if user %}{{ user.username }}{% endif %}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" id="password" name="password" class="form-input" {% if user %}{% else %}required{% endif %}>
+            {% if user %}
+                <p class="form-help">Leave blank to keep current password</p>
+            {% endif %}
+        </div>
+
+
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-submit">
+                {% if user %}Update User{% else %}Add User{% endif %}
+            </button>
+            <a href="{{ url_for('user_list') }}" class="btn btn-secondary btn-cancel">Cancel</a>
+        </div>
+    </form>
+
+    {% if user %}
+    <div class="avatar-section">
+        <h3>Avatar Settings</h3>
+        {% if user.avatar_filename %}
+            <img src="{{ url_for('static', filename='uploads/' + user.avatar_filename) }}" class="avatar-preview" alt="{{ user.username }}">
+        {% else %}
+            <div class="default-avatar-large">{{ user.username[0]|upper }}</div>
+        {% endif %}
+        
+        <p class="avatar-info">
+            {% if user.avatar_filename %}
+                Current avatar: {{ user.avatar }}<br>
+                File size must not exceed 100KB
+            {% else %}
+                No avatar, file size must not exceed 100KB
+            {% endif %}
+        </p>
+        
+        <div class="avatar-actions">
+            <form method="POST" action="{{ url_for('upload_avatar') }}" enctype="multipart/form-data" style="display: inline;">
+                <input type="hidden" name="user_id" value="{{ user.id }}">
+                <input type="file" name="avatar" accept="image/*" required>
+                <input type="text" name="filename" placeholder="Custom filename (optional)" style="margin-left: 0.5rem; padding: 0.5rem;">
+                <button type="submit" class="btn btn-primary">Upload Avatar</button>
+            </form>
+
+            {% if user.avatar_filename %}
+                <form method="POST" action="{{ url_for('delete_avatar', user_id=user.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Delete Avatar</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

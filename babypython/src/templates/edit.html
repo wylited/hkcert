@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}{% if post %}Edit Article - {{ post.title }}{% else %}Publish New Article{% endif %} - My Blog{% endblock %}
+
+{% block content %}
+<style>
+    .editor-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .editor-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .editor-title {
+        font-size: 1.75rem;
+        color: #2c3e50;
+    }
+
+    .editor-form {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #555;
+        font-weight: 500;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .form-textarea {
+        width: 100%;
+        min-height: 400px;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        font-family: inherit;
+        line-height: 1.6;
+        resize: vertical;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .form-textarea:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .btn-submit {
+        flex: 1;
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+
+    .btn-cancel {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+
+    .attachment-section {
+        margin-bottom: 1.5rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+
+    .attachment-info {
+        color: #555;
+        margin-bottom: 1rem;
+    }
+
+    .attachment-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .upload-notification {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        border-radius: 4px;
+        display: none;
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .upload-notification.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .upload-notification.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .editor-form {
+            padding: 1.5rem;
+        }
+
+        .form-textarea {
+            min-height: 300px;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-cancel {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="editor-container">
+    <div class="editor-header">
+        <h1 class="editor-title">{% if post %}Edit Article{% else %}Publish New Article{% endif %}</h1>
+    </div>
+
+    <form method="POST" action="{% if post %}{{ url_for('edit', post_id=post.id) }}{% else %}{{ url_for('create') }}{% endif %}" class="editor-form">
+        <div class="form-group">
+            <label for="title" class="form-label">Title</label>
+            <input type="text" id="title" name="title" class="form-input" value="{% if post %}{{ post.title }}{% endif %}" required>
+        </div>
+
+        <div class="form-group">
+            <label for="content" class="form-label">Content</label>
+            <textarea id="content" name="content" class="form-textarea" required>{% if post %}{{ post.content }}{% endif %}</textarea>
+        </div>
+
+        <div class="attachment-section">
+            <h3>Attachment Management</h3>
+            <div id="upload-notification" class="upload-notification"></div>
+            {% if post and post.attachment_path %}
+                <div class="attachment-info">
+                    Current attachment: {{ post.attachment }}
+                </div>
+                <div class="attachment-actions">
+                    <button type="button" onclick="downloadAttachment('{{ post.attachment_path }}')" class="btn btn-success btn-sm">Download Attachment</button>
+                    <button type="button" onclick="document.getElementById('replace-attachment').click()" class="btn btn-primary btn-sm">Replace Attachment</button>
+                    <input type="file" id="replace-attachment" name="attachment" accept="*/*" style="display: none;" onchange="uploadAttachment(this, 'replace')">
+                </div>
+            {% else %}
+                <div class="attachment-info">
+                    No attachment
+                </div>
+                <button type="button" onclick="document.getElementById('upload-attachment').click()" class="btn btn-primary btn-sm">Upload Attachment</button>
+                <input type="file" id="upload-attachment" name="attachment" accept="*/*" style="display: none;" onchange="uploadAttachment(this, 'new')">
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-submit">
+                {% if post %}Update Article{% else %}Publish Article{% endif %}
+            </button>
+            <a href="{{ url_for('admin') }}" class="btn btn-secondary btn-cancel">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+function showNotification(message, type) {
+    const notification = document.getElementById('upload-notification');
+    notification.textContent = message;
+    notification.className = 'upload-notification ' + type;
+    notification.style.display = 'block';
+
+    setTimeout(() => {
+        notification.style.display = 'none';
+    }, 5000);
+}
+
+function uploadAttachment(input, type) {
+    if (input.files.length === 0) return;
+
+    const notification = document.getElementById('upload-notification');
+    notification.textContent = 'Uploading...';
+    notification.className = 'upload-notification';
+    notification.style.display = 'block';
+    notification.style.background = '#cce5ff';
+    notification.style.color = '#004085';
+    notification.style.border = '1px solid #b8daff';
+
+    const formData = new FormData();
+    formData.append('attachment', input.files[0]);
+
+    fetch('/upload_attachment', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text())
+    .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const flashMessages = doc.querySelectorAll('.flash-message');
+
+        let hasSuccess = false;
+        let hasError = false;
+        let message = '';
+
+        flashMessages.forEach(msg => {
+            const text = msg.textContent.trim();
+            if (msg.classList.contains('success')) {
+                hasSuccess = true;
+                message = text;
+            } else if (msg.classList.contains('error')) {
+                hasError = true;
+                message = text;
+            }
+        });
+
+        if (hasSuccess) {
+            showNotification(message, 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        } else if (hasError) {
+            showNotification(message, 'error');
+        } else {
+            showNotification('Upload complete', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        }
+    })
+    .catch(error => {
+        showNotification('Upload failed: ' + error.message, 'error');
+    });
+}
+
+function downloadAttachment(path) {
+    const data = JSON.stringify({
+        path: path
+    });
+
+    fetch('/download_attachment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: data
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        }
+        throw new Error('Download failed');
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = path;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        showNotification('Download failed: ' + error.message, 'error');
+    });
+}
+</script>
+{% endblock %}

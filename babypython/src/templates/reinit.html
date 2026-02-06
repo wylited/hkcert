@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Reinitialize - My Blog{% endblock %}
+
+{% block content %}
+<style>
+    .reinit-container {
+        max-width: 500px;
+        margin: 3rem auto;
+    }
+
+    .reinit-card {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .reinit-title {
+        font-size: 1.75rem;
+        color: #2c3e50;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: #555;
+        font-weight: 500;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1rem;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+
+    .btn-submit:hover {
+        background: #2980b9;
+    }
+
+    .btn-back {
+        width: 100%;
+        padding: 0.75rem;
+        font-size: 1rem;
+        background: #95a5a6;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.3s;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+        margin-top: 1rem;
+    }
+
+    .btn-back:hover {
+        background: #7f8c8d;
+    }
+
+    .info-box {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 4px;
+    }
+
+    .info-box p {
+        margin: 0;
+        color: #856404;
+        font-size: 0.9rem;
+    }
+
+    .warning-box {
+        background: #f8d7da;
+        border-left: 4px solid #dc3545;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 4px;
+    }
+
+    .warning-box p {
+        margin: 0;
+        color: #721c24;
+        font-size: 0.9rem;
+    }
+
+    .success-box {
+        background: #d4edda;
+        border-left: 4px solid #28a745;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 4px;
+    }
+
+    .success-box p {
+        margin: 0;
+        color: #155724;
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="reinit-container">
+    <div class="reinit-card">
+        <h1 class="reinit-title">{% if already_initialized %}System Status{% else %}Initialize Database{% endif %}</h1>
+
+        {% if already_initialized %}
+            <div class="success-box">
+                <p>✅ Database has been initialized!</p>
+            </div>
+
+            <div class="info-box">
+                <p>💡 System has been initialized, no need to repeat.</p>
+            </div>
+
+            <a href="{{ url_for('index') }}" class="btn-back">Back to Home</a>
+        {% else %}
+            <div class="warning-box">
+                <p>⚠️ System not initialized! Please set admin account password to complete initialization.</p>
+            </div>
+
+            <div class="info-box">
+                <p>💡 This password will be used for admin account login, please keep it safe.</p>
+            </div>
+
+            <form method="POST">
+                <div class="form-group">
+                    <label for="admin_password" class="form-label">Admin Password</label>
+                    <input type="password" id="admin_password" name="admin_password" class="form-input" required minlength="6" placeholder="Please enter at least 6 characters">
+                </div>
+
+                <button type="submit" class="btn-submit">Initialize Database</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - 我的博客{% endblock %}
+
+{% block content %}
+<style>
+    .admin-panel-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .panel-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .panel-title {
+        font-size: 2rem;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .panel-subtitle {
+        margin-top: 0.5rem;
+        opacity: 0.9;
+    }
+
+    .content-card {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    .content-title {
+        font-size: 1.5rem;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #667eea;
+    }
+
+    .passwd-content {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 1.5rem;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+
+    .info-box {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 4px;
+    }
+
+    .info-box p {
+        margin: 0;
+        color: #1565c0;
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-bottom: 1.5rem;
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s;
+    }
+
+    .back-link:hover {
+        color: #764ba2;
+    }
+
+    @media (max-width: 768px) {
+        .panel-header {
+            padding: 1.5rem;
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+        }
+
+        .content-card {
+            padding: 1.5rem;
+        }
+
+        .passwd-content {
+            font-size: 0.8rem;
+            padding: 1rem;
+        }
+    }
+</style>
+
+<div class="admin-panel-container">
+    <a href="{{ url_for('index') }}" class="back-link">&larr; Back to Home</a>
+
+    <div class="panel-header">
+        <h1 class="panel-title">🔐 Admin Control Panel</h1>
+        <p class="panel-subtitle">Welcome, {{ current_user.username }}! This is your exclusive admin panel.</p>
+    </div>
+
+    <div class="content-card">
+        <h2 class="content-title">flagd</h2>
+
+        <div class="info-box">
+            <p>📋 flag</p>
+        </div>
+
+        <div class="passwd-content">{{ passwd_content }}</div>
+    </div>
+</div>
+{% endblock %}

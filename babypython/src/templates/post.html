@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }} - My Blog{% endblock %}
+
+{% block content %}
+<style>
+    .post-detail {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    .post-detail-title {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #2c3e50;
+    }
+
+    .post-content-template {
+        margin-top: 1.5rem;
+    }
+
+    .author-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+    }
+
+    .author-label {
+        color: #7f8c8d;
+        margin-right: 0.5rem;
+    }
+
+    .author-username {
+        color: #2c3e50;
+        font-weight: 600;
+    }
+
+    .post-body {
+        color: #333;
+        line-height: 1.8;
+        font-size: 1.05rem;
+        min-height: 100px;
+    }
+
+    .post-footer {
+        display: flex;
+        gap: 2rem;
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #ecf0f1;
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+
+    .attachment-section {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border-left: 4px solid #3498db;
+    }
+
+    .attachment-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .attachment-icon {
+        font-size: 1.2rem;
+    }
+
+    .attachment-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        color: #3498db;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .attachment-link:hover {
+        background: #3498db;
+        color: white;
+        border-color: #3498db;
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-bottom: 1.5rem;
+        color: #7f8c8d;
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+
+    .back-link:hover {
+        color: #3498db;
+    }
+
+    @media (max-width: 768px) {
+        .post-detail {
+            padding: 1.5rem;
+        }
+
+        .post-detail-title {
+            font-size: 1.5rem;
+        }
+
+        .post-footer {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+</style>
+
+<a href="{{ url_for('index') }}" class="back-link">&larr; Back to Home</a>
+
+<article class="post-detail">
+    <h1 class="post-detail-title">{{ post.title }}</h1>
+
+    <div class="post-content-template">
+        {{ rendered_content|safe }}
+    </div>
+
+    {% if post.attachment_path %}
+    <div class="attachment-section">
+        <div class="attachment-title">
+            <span class="attachment-icon">📎</span>
+            <span>Article Attachment</span>
+        </div>
+        <button type="button" onclick="downloadAttachment('{{ post.attachment_path }}')" class="attachment-link">
+            <span>📥</span>
+            <span>{{ post.attachment }}</span>
+        </button>
+    </div>
+    {% endif %}
+</article>
+
+<script>
+function downloadAttachment(path) {
+    const data = JSON.stringify({
+        path: path
+    });
+
+    fetch('/download_attachment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: data
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.blob();
+        }
+        throw new Error('Download failed');
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = path;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        alert('Download failed: ' + error.message);
+    });
+}
+</script>
+{% endblock %}
