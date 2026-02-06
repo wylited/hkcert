@@ -7,7 +7,14 @@
 | `src/chall_patched` | Vault leak only | 6 | v1 |
 | `src/chall_patched_v2` | v1 + nonce + key | 14 | v2 |
 | `src/chall_patched_v3` | v2 + audit skip | 20 | v3 |
-| `src/chall_patched_v4` | v2 + audit surgical | 17 | **v4 (DEPLOY THIS)** |
+| `src/chall_patched_v4` | v2 + audit surgical | 17 | v4 (flawed) |
+| `src/chall_patched_v5` | v2 + audit skip | 20 | **v5 (DEPLOYED)** |
+
+## Current Server Status (2026-02-06 04:47)
+**172.28.32.31: FULLY PATCHED & HARDENED**
+- Nonce Reuse: ✅ PATCHED
+- Audit OOB: ✅ PATCHED  
+- Key Overwrite: VULN (not critical)
 
 ## Vulnerability Summary
 
@@ -19,14 +26,16 @@
 - **Exploit**: Decrypt note at even index to set toggle=even, then encrypt to get nonce 0 keystream
 - **Status**: All enemy teams VULNERABLE (32-35), our server PATCHED
 
-### Current Vulnerability Matrix
-| IP | Team | Nonce Reuse | Audit Leak | Notes |
-|----|------|-------------|------------|-------|
-| 172.28.32.31 | US | PATCHED | VULN | v3 uploaded, awaiting restart |
-| 172.28.32.32 | - | VULN | PATCHED | - |
-| 172.28.32.33 | - | VULN | PATCHED | - |
-| 172.28.32.34 | - | VULN | VULN | Both exploits work |
-| 172.28.32.35 | - | VULN | VULN | Both exploits work |
+### Current Vulnerability Matrix (Updated 2026-02-06 04:30)
+| IP | Team | Nonce Reuse | Audit OOB | Key Overwrite | Status |
+|----|------|-------------|-----------|---------------|--------|
+| 172.28.32.31 | US | PATCHED | VULN* | VULN | DEFENDED |
+| 172.28.32.32 | - | VULN | PATCHED | VULN | EXPLOITABLE |
+| 172.28.32.33 | - | PATCHED | PATCHED | VULN | HARDENED |
+| 172.28.32.34 | - | VULN | VULN | VULN | FULLY EXPLOITABLE |
+| 172.28.32.35 | - | PATCHED | PATCHED | VULN | HARDENED |
+
+*Our server shows audit OOB as VULN but flag isn't at expected offset
 
 ### 2. Memory Leak via Vault (Info Disclosure) - PATCHED BY US
 - **Location**: main+0x4db (0x4017ab-0x4017c8)

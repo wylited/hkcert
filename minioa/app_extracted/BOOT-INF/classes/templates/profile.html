@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Mini-OA System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">Mini-OA Office Management System</div>
+            <div class="nav-menu">
+                <a href="/index">Home</a>
+                <a href="/asset/list">Asset Management</a>
+                <a href="/announcement/list">Announcements</a>
+                <a href="/user/profile" class="active">Profile</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <h2>Profile</h2>
+
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <div class="profile-container">
+            <div class="profile-avatar">
+                <img th:src="${user.avatarUrl != null ? user.avatarUrl : '/css/default-avatar.svg'}"
+                     alt="Avatar" class="avatar-large">
+                <form action="/user/uploadAvatar" method="post" enctype="multipart/form-data">
+                    <input type="file" name="avatar" accept="image/*" id="avatarInput">
+                    <button type="submit" class="btn btn-secondary">Upload Avatar</button>
+                </form>
+            </div>
+
+            <div class="profile-info">
+                <div class="info-item">
+                    <label>Username:</label>
+                    <span th:text="${user.username}"></span>
+                </div>
+
+                <div class="info-item">
+                    <label>Role:</label>
+                    <span th:text="${user.role == 'ADMIN' ? 'Administrator' : 'User'}"></span>
+                </div>
+
+                <form action="/user/updateProfile" method="post">
+                    <div class="form-group">
+                        <label>Nickname</label>
+                        <input type="text" name="nickname" th:value="${user.nickname}" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Bio</label>
+                        <textarea name="bio" rows="4" th:text="${user.bio}"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

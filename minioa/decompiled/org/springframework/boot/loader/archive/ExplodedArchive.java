@@ -1,0 +1,275 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package org.springframework.boot.loader.archive;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.jar.Manifest;
+import org.springframework.boot.loader.archive.Archive;
+
+public class ExplodedArchive
+implements Archive {
+    private static final Set<String> SKIPPED_NAMES = new HashSet<String>(Arrays.asList(".", ".."));
+    private final File root;
+    private final boolean recursive;
+    private File manifestFile;
+    private Manifest manifest;
+
+    public ExplodedArchive(File root) {
+        this(root, true);
+    }
+
+    public ExplodedArchive(File root, boolean recursive) {
+        if (!root.exists() || !root.isDirectory()) {
+            throw new IllegalArgumentException("Invalid source directory " + root);
+        }
+        this.root = root;
+        this.recursive = recursive;
+        this.manifestFile = this.getManifestFile(root);
+    }
+
+    private File getManifestFile(File root) {
+        File metaInf = new File(root, "META-INF");
+        return new File(metaInf, "MANIFEST.MF");
+    }
+
+    @Override
+    public URL getUrl() throws MalformedURLException {
+        return this.root.toURI().toURL();
+    }
+
+    @Override
+    public Manifest getManifest() throws IOException {
+        if (this.manifest == null && this.manifestFile.exists()) {
+            try (FileInputStream inputStream = new FileInputStream(this.manifestFile);){
+                this.manifest = new Manifest(inputStream);
+            }
+        }
+        return this.manifest;
+    }
+
+    @Override
+    public Iterator<Archive> getNestedArchives(Archive.EntryFilter searchFilter, Archive.EntryFilter includeFilter) throws IOException {
+        return new ArchiveIterator(this.root, this.recursive, searchFilter, includeFilter);
+    }
+
+    @Override
+    @Deprecated
+    public Iterator<Archive.Entry> iterator() {
+        return new EntryIterator(this.root, this.recursive, null, null);
+    }
+
+    protected Archive getNestedArchive(Archive.Entry entry) throws IOException {
+        File file = ((FileEntry)entry).getFile();
+        return file.isDirectory() ? new ExplodedArchive(file) : new SimpleJarFileArchive((FileEntry)entry);
+    }
+
+    @Override
+    public boolean isExploded() {
+        return true;
+    }
+
+    public String toString() {
+        try {
+            return this.getUrl().toString();
+        }
+        catch (Exception ex) {
+            return "exploded archive";
+        }
+    }
+
+    private static class SimpleJarFileArchive
+    implements Archive {
+        private final URL url;
+
+        SimpleJarFileArchive(FileEntry file) {
+            this.url = file.getUrl();
+        }
+
+        @Override
+        public URL getUrl() throws MalformedURLException {
+            return this.url;
+        }
+
+        @Override
+        public Manifest getManifest() throws IOException {
+            return null;
+        }
+
+        @Override
+        public Iterator<Archive> getNestedArchives(Archive.EntryFilter searchFilter, Archive.EntryFilter includeFilter) throws IOException {
+            return Collections.emptyIterator();
+        }
+
+        @Override
+        @Deprecated
+        public Iterator<Archive.Entry> iterator() {
+            return Collections.emptyIterator();
+        }
+
+        public String toString() {
+            try {
+                return this.getUrl().toString();
+            }
+            catch (Exception ex) {
+                return "jar archive";
+            }
+        }
+    }
+
+    private static class FileEntry
+    implements Archive.Entry {
+        private final String name;
+        private final File file;
+        private final URL url;
+
+        FileEntry(String name, File file, URL url) {
+            this.name = name;
+            this.file = file;
+            this.url = url;
+        }
+
+        File getFile() {
+            return this.file;
+        }
+
+        @Override
+        public boolean isDirectory() {
+            return this.file.isDirectory();
+        }
+
+        @Override
+        public String getName() {
+            return this.name;
+        }
+
+        URL getUrl() {
+            return this.url;
+        }
+    }
+
+    private static class ArchiveIterator
+    extends AbstractIterator<Archive> {
+        ArchiveIterator(File root, boolean recursive, Archive.EntryFilter searchFilter, Archive.EntryFilter includeFilter) {
+            super(root, recursive, searchFilter, includeFilter);
+        }
+
+        @Override
+        protected Archive adapt(FileEntry entry) {
+            File file = entry.getFile();
+            return file.isDirectory() ? new ExplodedArchive(file) : new SimpleJarFileArchive(entry);
+        }
+    }
+
+    private static class EntryIterator
+    extends AbstractIterator<Archive.Entry> {
+        EntryIterator(File root, boolean recursive, Archive.EntryFilter searchFilter, Archive.EntryFilter includeFilter) {
+            super(root, recursive, searchFilter, includeFilter);
+        }
+
+        @Override
+        protected Archive.Entry adapt(FileEntry entry) {
+            return entry;
+        }
+    }
+
+    private static abstract class AbstractIterator<T>
+    implements Iterator<T> {
+        private static final Comparator<File> entryComparator = Comparator.comparing(File::getAbsolutePath);
+        private final File root;
+        private final boolean recursive;
+        private final Archive.EntryFilter searchFilter;
+        private final Archive.EntryFilter includeFilter;
+        private final Deque<Iterator<File>> stack = new LinkedList<Iterator<File>>();
+        private FileEntry current;
+        private String rootUrl;
+
+        AbstractIterator(File root, boolean recursive, Archive.EntryFilter searchFilter, Archive.EntryFilter includeFilter) {
+            this.root = root;
+            this.rootUrl = this.root.toURI().getPath();
+            this.recursive = recursive;
+            this.searchFilter = searchFilter;
+            this.includeFilter = includeFilter;
+            this.stack.add(this.listFiles(root));
+            this.current = this.poll();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return this.current != null;
+        }
+
+        @Override
+        public T next() {
+            FileEntry entry = this.current;
+            if (entry == null) {
+                throw new NoSuchElementException();
+            }
+            this.current = this.poll();
+            return this.adapt(entry);
+        }
+
+        private FileEntry poll() {
+            while (!this.stack.isEmpty()) {
+                while (this.stack.peek().hasNext()) {
+                    File file = this.stack.peek().next();
+                    if (SKIPPED_NAMES.contains(file.getName())) continue;
+                    FileEntry entry = this.getFileEntry(file);
+                    if (this.isListable(entry)) {
+                        this.stack.addFirst(this.listFiles(file));
+                    }
+                    if (this.includeFilter != null && !this.includeFilter.matches(entry)) continue;
+                    return entry;
+                }
+                this.stack.poll();
+            }
+            return null;
+        }
+
+        private FileEntry getFileEntry(File file) {
+            URI uri = file.toURI();
+            String name = uri.getPath().substring(this.rootUrl.length());
+            try {
+                return new FileEntry(name, file, uri.toURL());
+            }
+            catch (MalformedURLException ex) {
+                throw new IllegalStateException(ex);
+            }
+        }
+
+        private boolean isListable(FileEntry entry) {
+            return !(!entry.isDirectory() || !this.recursive && !entry.getFile().getParentFile().equals(this.root) || this.searchFilter != null && !this.searchFilter.matches(entry) || this.includeFilter != null && this.includeFilter.matches(entry));
+        }
+
+        private Iterator<File> listFiles(File file) {
+            File[] files = file.listFiles();
+            if (files == null) {
+                return Collections.emptyIterator();
+            }
+            Arrays.sort(files, entryComparator);
+            return Arrays.asList(files).iterator();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException("remove");
+        }
+
+        protected abstract T adapt(FileEntry var1);
+    }
+}
+

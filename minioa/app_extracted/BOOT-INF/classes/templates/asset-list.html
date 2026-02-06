@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Management - Mini-OA System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">Mini-OA Office Management System</div>
+            <div class="nav-menu">
+                <a href="/index">Home</a>
+                <a href="/asset/list" class="active">Asset Management</a>
+                <a href="/announcement/list">Announcements</a>
+                <a href="/user/profile">Profile</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="page-header">
+            <h2>Asset Management</h2>
+            <div class="header-actions">
+                <a href="/asset/add" class="btn btn-primary">Add Asset</a>
+                <a href="/asset_template.yaml" download class="btn btn-secondary">Download Import Template</a>
+                <button onclick="document.getElementById('importFile').click()" class="btn btn-secondary">Batch Import</button>
+                <input type="file" id="importFile" accept=".yaml,.yml" style="display:none" onchange="uploadFile(this)">
+            </div>
+        </div>
+
+        <div id="importMessage" style="display:none" class="alert"></div>
+
+        <div th:if="${filterError}" class="alert alert-error" th:text="${filterError}"></div>
+
+        <div class="search-box">
+            <form action="/asset/list" method="get">
+                <div style="display: flex; gap: 10px; flex-direction: column;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" name="keyword" th:value="${keyword}" placeholder="Search asset name or description" style="flex: 1;">
+                        <button type="submit" class="btn btn-secondary">Search</button>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" name="propertyFilter" th:value="${propertyFilter}"
+                               placeholder="Advanced search e.g.: name='ThinkPad' or details/brand='Dell'"
+                               style="flex: 1;">
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Asset Name</th>
+                    <th>Type</th>
+                    <th>Serial Number</th>
+                    <th>Description</th>
+                    <th>Extended Properties</th>
+                    <th>Owner</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="asset : ${assets}">
+                    <td th:text="${asset.id}"></td>
+                    <td th:text="${asset.name}"></td>
+                    <td th:text="${asset.type}"></td>
+                    <td th:text="${asset.serialNumber}"></td>
+                    <td th:text="${asset.description}"></td>
+                    <td>
+                        <code th:if="${asset.details != null}"
+                              th:text="${asset.details}"
+                              style="font-size: 11px; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; display: block; max-width: 200px; overflow: auto;">
+                        </code>
+                        <span th:if="${asset.details == null}" style="color: #999;">-</span>
+                    </td>
+                    <td th:text="${asset.ownerNickname}"></td>
+                    <td>
+                        <a th:href="@{/asset/delete/{id}(id=${asset.id})}"
+                           class="btn-link btn-danger"
+                           onclick="return confirm('Are you sure you want to delete this asset?')">Delete</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div th:if="${#lists.isEmpty(assets)}" class="empty-state">
+            <p>No asset data available</p>
+        </div>
+    </div>
+
+    <script>
+        function uploadFile(input) {
+            const file = input.files[0];
+            if (!file) {
+                return;
+            }
+
+            // Create FormData object
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Show loading message
+            showMessage('Importing, please wait...', 'info');
+
+            // Send AJAX request
+            fetch('/asset/import', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    // Refresh page after 1 second delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showMessage('Import failed: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // Clear file selection
+                input.value = '';
+            });
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('importMessage');
+            messageDiv.textContent = message;
+            messageDiv.className = 'alert';
+
+            if (type === 'success') {
+                messageDiv.className += ' alert-success';
+            } else if (type === 'error') {
+                messageDiv.className += ' alert-error';
+            } else {
+                messageDiv.className += ' alert-info';
+            }
+
+            messageDiv.style.display = 'block';
+
+            // Auto hide after 3 seconds (unless success message)
+            if (type !== 'success') {
+                setTimeout(() => {
+                    messageDiv.style.display = 'none';
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>

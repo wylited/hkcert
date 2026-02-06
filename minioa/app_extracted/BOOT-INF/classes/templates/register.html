@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Mini-OA System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <div class="login-box">
+            <h1>Mini-OA Office Management System</h1>
+            <h2>User Registration</h2>
+
+            <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+            <form action="/doRegister" method="post">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" required placeholder="Enter username">
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required placeholder="Enter password">
+                </div>
+
+                <div class="form-group">
+                    <label>Nickname</label>
+                    <input type="text" name="nickname" required placeholder="Enter nickname">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Register</button>
+            </form>
+
+            <div class="link-group">
+                <a href="/login">Already have an account? Login now</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

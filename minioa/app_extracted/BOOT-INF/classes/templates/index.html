@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Mini-OA System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">Mini-OA Office Management System</div>
+            <div class="nav-menu">
+                <a href="/index" class="active">Home</a>
+                <a href="/asset/list">Asset Management</a>
+                <a href="/announcement/list">Announcements</a>
+                <a href="/script/execute">Script Execution</a>
+                <a href="/user/profile">Profile</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="welcome-section">
+            <h1>Welcome to Mini-OA Office Management System</h1>
+            <p th:if="${session.user != null}">Current user: <span th:text="${session.user.nickname}">User</span></p>
+            <p th:if="${session.user == null}">Please login first</p>
+        </div>
+
+        <div class="card-grid">
+            <div class="card">
+                <h3>Asset Management</h3>
+                <p>Manage company assets including computers, phones, office equipment, etc.</p>
+                <a href="/asset/list" class="btn btn-primary">Enter</a>
+            </div>
+
+            <div class="card">
+                <h3>Announcements</h3>
+                <p>View and publish company announcements</p>
+                <a href="/announcement/list" class="btn btn-primary">View</a>
+            </div>
+
+            <div class="card">
+                <h3>Script Execution</h3>
+                <p>Execute Lua scripts for office automation tasks</p>
+                <a href="/script/execute" class="btn btn-primary">Execute</a>
+            </div>
+
+            <div class="card">
+                <h3>Profile</h3>
+                <p>Manage personal information, avatar and bio</p>
+                <a href="/user/profile" class="btn btn-primary">Profile</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

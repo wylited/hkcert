@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.minioa.mapper.AssetMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.minioa.entity.Asset">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="type" property="type"/>
+        <result column="serial_number" property="serialNumber"/>
+        <result column="description" property="description"/>
+        <result column="owner_id" property="ownerId"/>
+        <result column="owner_nickname" property="ownerNickname"/>
+        <result column="details" property="details"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 查询所有资产（关联查询所有者昵称） -->
+    <select id="findAll" resultMap="BaseResultMap">
+        SELECT a.*, u.nickname as owner_nickname
+        FROM assets a
+        LEFT JOIN users u ON a.owner_id = u.id
+        ORDER BY a.create_time DESC
+    </select>
+
+    <!-- 根据关键字搜索资产 -->
+    <select id="searchByKeyword" resultMap="BaseResultMap">
+        SELECT a.*, u.nickname as owner_nickname
+        FROM assets a
+        LEFT JOIN users u ON a.owner_id = u.id
+        WHERE a.name LIKE CONCAT('%', #{keyword}, '%')
+           OR a.description LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY a.create_time DESC
+    </select>
+
+    <!-- 根据ID查询 -->
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT a.*, u.nickname as owner_nickname
+        FROM assets a
+        LEFT JOIN users u ON a.owner_id = u.id
+        WHERE a.id = #{id}
+    </select>
+
+    <!-- 插入资产 -->
+    <insert id="insert" parameterType="com.minioa.entity.Asset" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO assets (name, type, serial_number, description, details, owner_id)
+        VALUES (#{name}, #{type}, #{serialNumber}, #{description}, #{details}, #{ownerId})
+    </insert>
+
+    <!-- 更新资产 -->
+    <update id="update" parameterType="com.minioa.entity.Asset">
+        UPDATE assets
+        SET name = #{name},
+            type = #{type},
+            serial_number = #{serialNumber},
+            description = #{description},
+            details = #{details},
+            owner_id = #{ownerId}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除资产 -->
+    <delete id="deleteById">
+        DELETE FROM assets WHERE id = #{id}
+    </delete>
+
+</mapper>

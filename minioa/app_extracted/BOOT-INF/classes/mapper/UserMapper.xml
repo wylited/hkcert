@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.minioa.mapper.UserMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.minioa.entity.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="nickname" property="nickname"/>
+        <result column="role" property="role"/>
+        <result column="avatar_url" property="avatarUrl"/>
+        <result column="bio" property="bio"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 根据用户名查询 -->
+    <select id="findByUsername" resultMap="BaseResultMap">
+        SELECT * FROM users WHERE username = #{username}
+    </select>
+
+    <!-- 根据ID查询 -->
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT * FROM users WHERE id = #{id}
+    </select>
+
+    <!-- 插入用户 -->
+    <insert id="insert" parameterType="com.minioa.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (username, password, nickname, role, avatar_url, bio)
+        VALUES (#{username}, #{password}, #{nickname}, #{role}, #{avatarUrl}, #{bio})
+    </insert>
+
+    <!-- 更新用户 -->
+    <update id="update" parameterType="com.minioa.entity.User">
+        UPDATE users
+        SET nickname = #{nickname},
+            avatar_url = #{avatarUrl},
+            bio = #{bio}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除用户 -->
+    <delete id="deleteById">
+        DELETE FROM users WHERE id = #{id}
+    </delete>
+
+</mapper>

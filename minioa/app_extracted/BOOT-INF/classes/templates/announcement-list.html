@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Announcements - Mini-OA System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">Mini-OA Office Management System</div>
+            <div class="nav-menu">
+                <a href="/index">Home</a>
+                <a href="/asset/list">Asset Management</a>
+                <a href="/announcement/list" class="active">Announcements</a>
+                <a href="/user/profile">Profile</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="page-header">
+            <h2>Announcements</h2>
+            <a href="/announcement/publish" class="btn btn-primary">Publish Announcement</a>
+        </div>
+
+        <div class="announcement-list">
+            <div th:each="announcement : ${announcements}" class="announcement-item">
+                <h3 th:text="${announcement.title}"></h3>
+                <div class="announcement-meta">
+                    <span>Publisher: <span th:text="${announcement.authorNickname}"></span></span>
+                    <span>Published: <span th:text="${#dates.format(announcement.createTime, 'yyyy-MM-dd HH:mm')}"></span></span>
+                </div>
+                <p th:text="${announcement.content}"></p>
+                <div class="announcement-actions">
+                    <a th:href="@{/announcement/delete/{id}(id=${announcement.id})}"
+                       class="btn-link btn-danger"
+                       onclick="return confirm('Are you sure you want to delete this announcement?')">Delete</a>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${#lists.isEmpty(announcements)}" class="empty-state">
+            <p>No announcements available</p>
+        </div>
+    </div>
+</body>
+</html>

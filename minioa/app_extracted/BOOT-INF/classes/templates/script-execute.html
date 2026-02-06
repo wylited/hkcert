@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Script Execution - Mini-OA System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+        .result-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .result-box pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error-box {
+            background: #fee;
+            border-color: #fcc;
+            color: #c33;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">Mini-OA Office Management System</div>
+            <div class="nav-menu">
+                <a href="/index">Home</a>
+                <a href="/asset/list">Asset Management</a>
+                <a href="/announcement/list">Announcements</a>
+                <a href="/script/execute" class="active">Script Execution</a>
+                <a href="/user/profile">Profile</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <h2>Lua Script Execution</h2>
+        <p>Provides Lua script execution functionality for office automation task processing</p>
+
+        <div class="form-container">
+            <div class="form-group">
+                <label>Lua Script Code</label>
+                <textarea id="luaCode" rows="12" placeholder="Enter Lua script code...&#10;&#10;Example:&#10;print('Hello, World!')&#10;print(1 + 2)"></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary" onclick="executeScript()">Execute Script</button>
+                <button type="button" class="btn btn-secondary" onclick="clearResult()">Clear Result</button>
+            </div>
+        </div>
+
+        <div id="resultContainer" style="display: none;">
+            <h3>Execution Result</h3>
+            <div id="resultBox" class="result-box"></div>
+        </div>
+    </div>
+
+    <script>
+        function executeScript() {
+            const code = document.getElementById('luaCode').value;
+            if (!code.trim()) {
+                alert('Please enter Lua script code');
+                return;
+            }
+
+            fetch('/script/execute', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'code=' + encodeURIComponent(code)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultContainer = document.getElementById('resultContainer');
+                const resultBox = document.getElementById('resultBox');
+
+                resultContainer.style.display = 'block';
+
+                if (data.success) {
+                    resultBox.className = 'result-box';
+                    let html = '<strong>Output:</strong><pre>' + escapeHtml(data.output || '(No output)') + '</pre>';
+                    if (data.error) {
+                        html += '<br><strong>Error:</strong><pre>' + escapeHtml(data.error) + '</pre>';
+                    }
+                    resultBox.innerHTML = html;
+                } else {
+                    resultBox.className = 'result-box error-box';
+                    resultBox.innerHTML = '<strong>Execution failed:</strong><pre>' + escapeHtml(data.error || 'Unknown error') + '</pre>';
+                }
+            })
+            .catch(error => {
+                const resultContainer = document.getElementById('resultContainer');
+                const resultBox = document.getElementById('resultBox');
+
+                resultContainer.style.display = 'block';
+                resultBox.className = 'result-box error-box';
+                resultBox.innerHTML = '<strong>Request failed:</strong><pre>' + escapeHtml(error.message) + '</pre>';
+            });
+        }
+
+        function clearResult() {
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('resultBox').innerHTML = '';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

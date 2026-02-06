@@ -1,0 +1,27 @@
+# Mini-OA 资产批量导入模板
+# 请按照以下格式填写资产信息，每个资产用 - 开头
+
+- name: "MacBook Pro"
+  type: "Office Equipment"
+  serialNumber: "APPLE-2023-001"
+  description: "Design team laptop"
+
+- name: "Dell Monitor"
+  type: "Peripheral"
+  serialNumber: "DELL-9920"
+  description: "4K Display"
+
+- name: "iPhone 14 Pro"
+  type: "Mobile Device"
+  serialNumber: "APPLE-PHONE-2023"
+  description: "Company phone for sales team"
+
+- name: "Logitech Keyboard"
+  type: "Peripheral"
+  serialNumber: "LOGI-KB-001"
+  description: "Mechanical keyboard"
+
+- name: "HP Printer"
+  type: "Office Equipment"
+  serialNumber: "HP-PRINT-2023"
+  description: "Color laser printer for office use"

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Mini-OA System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="container">
+        <div class="login-box">
+            <h1>Mini-OA Office Management System</h1>
+            <h2>User Login</h2>
+
+            <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+            <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+            <form action="/doLogin" method="post">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" name="username" required placeholder="Enter username">
+                </div>
+
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" required placeholder="Enter password">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+
+            <div class="link-group">
+                <a href="/register">Don't have an account? Register now</a>
+                <a href="/partner/apply" style="margin-top: 10px; display: block;">Partner System Integration Application</a>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

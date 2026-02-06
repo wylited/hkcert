@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Publish Announcement - Mini-OA System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">Mini-OA Office Management System</div>
+            <div class="nav-menu">
+                <a href="/index">Home</a>
+                <a href="/asset/list">Asset Management</a>
+                <a href="/announcement/list" class="active">Announcements</a>
+                <a href="/user/profile">Profile</a>
+                <a href="/logout">Logout</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <h2>Publish Announcement</h2>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <form action="/announcement/publish" method="post" class="form-container">
+            <div class="form-group">
+                <label>Announcement Title</label>
+                <input type="text" name="title" required placeholder="Enter announcement title">
+            </div>
+
+            <div class="form-group">
+                <label>Announcement Content</label>
+                <textarea name="content" rows="8" required placeholder="Enter announcement content"></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Publish</button>
+                <a href="/announcement/list" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
