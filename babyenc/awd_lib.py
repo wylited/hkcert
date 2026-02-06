@@ -47,7 +47,7 @@ API_URL = "http://10.2.60.1/api/ct/web/awd_race/race/38d769e349e4ee6e6d25aa4a2d0
 TOKEN = "9b9b71ea9cc34567687378baa78eb6d3"
 
 # Path to credentials file (CSV or XLSX)
-CREDS_FILE = "mqda.csv"  # or "mqda.xlsx"
+CREDS_FILE = "babyenc.xls"  # or "mqda.xlsx"
 
 # PEM file settings
 PEM_URL = "http://10.30.16.251:80/ct/upload/other/pvt-ctf-546ad20ed70bd27645a8734f6ae1fbe1.pem"
@@ -498,34 +498,27 @@ def _parse_csv(filepath):
 
 
 def _parse_xlsx(filepath):
-    """Parse XLSX file for target IPs."""
+    """Parse XLSX/XLS file for target IPs."""
     try:
-        import openpyxl
+        import pandas as pd
     except ImportError:
-        raise ImportError("openpyxl required for xlsx: pip install openpyxl")
+        raise ImportError("pandas required for xlsx/xls: pip install pandas openpyxl xlrd")
     
-    targets = []
-    wb = openpyxl.load_workbook(filepath)
-    ws = wb.active
+    df = pd.read_excel(filepath)
     
-    for row in ws.iter_rows(values_only=True):
-        for i, cell in enumerate(row):
-            if cell and 'Guest_Node' in str(cell):
-                # Next row should have IP
-                pass  # Simplified - CSV parsing is more reliable
-            if cell and _is_valid_ip(str(cell)):
-                # Check if this looks like a target IP (not our own)
-                targets.append(str(cell))
+    target_ips = []
+    in_targets = False
     
-    # Deduplicate while preserving order
-    seen = set()
-    unique = []
-    for ip in targets:
-        if ip not in seen:
-            seen.add(ip)
-            unique.append(ip)
+    for i, row in df.iterrows():
+        col0 = str(row.iloc[0]) if pd.notna(row.iloc[0]) else ''
+        col1 = str(row.iloc[1]) if len(row) > 1 and pd.notna(row.iloc[1]) else ''
+        
+        if 'Other Team Info' in col0 or 'Guest_Node' in col0:
+            in_targets = True
+        if col0 == 'IP' and in_targets and _is_valid_ip(col1):
+            target_ips.append(col1)
     
-    return unique
+    return target_ips
 
 
 def _is_valid_ip(s):
@@ -552,6 +545,26 @@ def get_our_ip(creds_file=None):
     if not os.path.exists(creds_file):
         raise FileNotFoundError(f"Credentials file not found: {creds_file}")
     
+    # Handle Excel files
+    if creds_file.endswith('.xlsx') or creds_file.endswith('.xls'):
+        try:
+            import pandas as pd
+            df = pd.read_excel(creds_file)
+            
+            in_targets = False
+            for i, row in df.iterrows():
+                col0 = str(row.iloc[0]) if pd.notna(row.iloc[0]) else ''
+                col1 = str(row.iloc[1]) if len(row) > 1 and pd.notna(row.iloc[1]) else ''
+                
+                if 'Other Team Info' in col0 or 'Guest_Node' in col0:
+                    in_targets = True
+                if col0 == 'IP' and not in_targets and _is_valid_ip(col1):
+                    return col1
+            return None
+        except Exception:
+            return None
+    
+    # Handle CSV
     with open(creds_file, 'r') as f:
         lines = f.readlines()
     
