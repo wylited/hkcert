@@ -11,22 +11,22 @@ This repository contains the challenges, exploits, and infrastructure tooling fo
 ## 📂 Repository Structure
 
 ### Challenges
-*   **`babyenc/`**: Cryptography/Encoding challenge.
-*   **`babypython/`**: Python-based challenge (likely Web or Misc).
-*   **`coshell/`**: Shell/Pwn challenge.
-*   **`eznote/`**: Note-taking application (Web/Pwn).
-*   **`ezvm/`**: Virtual Machine challenge.
-*   **`lasp/`**: "LaoSparrow" challenge (VM/Compiler).
-*   **`minioa/`**: Java/Jar based challenge.
-*   **`sayako/`**: Challenge involving certificates/instructions.
+*   **`babyenc/`**: Cryptography/Pwn challenge (Nonce reuse, Vault info leak).
+*   **`babypython/`**: Python Web challenge (Path Traversal, SSTI, IDOR).
+*   **`coshell/`**: Shell/Pwn challenge (Heap Overflow, Integer Overflow).
+*   **`eznote/`**: Note-taking Web/Pwn challenge (Command Injection, Symlink Attack).
+*   **`ezvm/`**: "EasyVM" - Virtual Machine exploitation challenge.
+*   **`minioa/`**: Java Spring Boot OA System.
 *   **`simpleblog/`**: Blog application (Web).
 *   **`example-chal/`**: Template directory for creating new challenges.
 
 ### Infrastructure & Tools
+*   **`sayako/`**: `certins` CLI tool for managing SSH connections, file transfers, and instance tags.
+*   **`lasp/`**: "LaoSparrow" - Binary analysis and patching framework (includes Patcherex, PovSim).
 *   **`discord-bot/`**: Rust-based Discord logging server for AWD events.
 *   **`webhooks/`**: Configuration for GitHub webhooks.
 *   **`practice/`**: VPN configuration and connection scripts.
-*   **`wyli/`**: User directory containing utilities and documentation.
+*   **`wyli/`**: Team member directory (Utilities, Documentation, MQDA).
 
 ## 🚀 Getting Started
 
